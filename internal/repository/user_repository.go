@@ -1,24 +1,43 @@
 package repository
 
-import "go-rest-api/internal/model"
+import (
+	"go-rest-api/internal/model"
 
-// interface (contract) 
+	"gorm.io/gorm"
+)
+
 type UserRepository interface {
 	FindAll() ([]model.User, error)
+	FindByEmail(email string) (*model.User, error)
+	Create(user *model.User) error
 }
 
-// implementation 
-type userRepository struct{}
+type userRepository struct {
+	db *gorm.DB
+}
 
-func NewUserRepository() UserRepository {
-	return &userRepository{}
+func NewUserRepository(db *gorm.DB) UserRepository {
+	return &userRepository{db: db}
 }
 
 func (r *userRepository) FindAll() ([]model.User, error) {
-	users := []model.User{
-		{ID: 1, Name: "Sudais", Email: "sudais@yahoo.com"},
-		{ID: 1, Name: "Novan", Email: "novan@yahoo.com"},
+	var users []model.User
+	err := r.db.Find(&users).Error
+	if err != nil {
+		return nil, err
 	}
-
 	return users, nil
+}
+
+func (r *userRepository) FindByEmail(email string) (*model.User, error) {
+	var user model.User
+	err := r.db.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) Create(user *model.User) error {
+	return r.db.Create(user).Error
 }
